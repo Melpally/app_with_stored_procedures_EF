@@ -163,3 +163,78 @@ end
   @Page = 1,
   @PageSize = 2
 
+-------export_Json--------------------
+
+go
+create or alter procedure udpExportToJson(
+  @Street nvarchar(200) = null,
+  @Price real = 0.0, 
+  @CreationDate datetime = null
+) as
+begin
+	declare @tab as table (
+	  FirstName nvarchar(200),
+	  PhoneNumber nvarchar(200),
+	  Street nvarchar(200), 
+	  HomeNumber nvarchar(200),
+	  CreationDate datetime,
+	  Price real, 	  
+	  TotalRows int
+	)
+
+	insert into @tab
+	 exec udpFilterData
+	  @Street = @Street,
+	  @CreationDate = @CreationDate,
+	  @Price = @Price,
+	  @SortField = 'FirstName',
+	  @SortDesc = 0,
+	  @Page = 1,
+	  @PageSize = 2000000
+
+	select * from @tab
+	for json path
+end
+
+--test
+exec udpExportToJson
+
+----------export_xml--------
+go
+create or alter procedure udpExportToXml(
+   @Street nvarchar(200) = null,
+   @Price real = 0.0, 
+   @CreationDate datetime = null,
+   @Results nvarchar(2000) OUT
+) as
+begin
+	declare @tab as table (
+	   FirstName nvarchar(200),
+	   PhoneNumber nvarchar(200),
+	   Street nvarchar(200), 
+	   HomeNumber nvarchar(200),
+	   CreationDate datetime,
+	   Price real, 	  
+	   TotalRows int
+	)
+
+	insert into @tab
+	 exec udpFilterData
+	  @Street = @Street,
+	  @Price = @Price,
+	  @CreationDate = @CreationDate,
+	  @SortField = 'FirstName',
+	  @SortDesc = 0,
+	  @Page = 1,
+	  @PageSize = 2000000
+
+	set @Results = (select * from @tab
+	                for xml path('DataRow'), root('FilterData'))
+end
+--test
+declare @r nvarchar(2000)
+exec udpExportToXml @Results = @r OUT
+print @r
+
+-------import--------
+
